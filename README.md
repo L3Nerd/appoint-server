@@ -21,9 +21,11 @@ Error response codes: `4xx`
 
 **Response example**
 ```json
+HEADER:
+  X-APP_KEY: k19sh63mna7pq83nbd6hdz6
+
 {
   "id":"1",
-  "key":"k19sh63mna7pq83nbd6hdz6",
   "name":"Grillen am Strand",
   "description":"Wollen demnächst mal am Strand grillen.",
   "creator": "Olli",
@@ -63,7 +65,7 @@ Error response codes: `4xx`
 }
 ```
 
-### `PUT /appointments/:id/admin/:key`
+### `PUT /appointments/:id`
 
 **Updates an appointment - Only with valid key. **
 
@@ -72,6 +74,9 @@ Error response codes: `4xx`
 
 **Request example**
 ```json
+HEADER:
+  X-APP_KEY: k19sh63mna7pq83nbd6hdz6
+
 {
   "name":"Kochen bei mir zu Hause.",
 }
@@ -90,16 +95,21 @@ Error response codes: `4xx`
 }
 ```
 
-### `DELETE /appointments/:id/admin/:key`
+### `DELETE /appointments/:id`
 
 **Deletes an appointment - Only with valid key.**
+
+```
+HEADER:
+  X-APP_KEY: k19sh63mna7pq83nbd6hdz6
+```
 
 Normal response codes: `200 204`
 Error response codes: `4xx`
 
-### `POST /appointments/:id/vote`
+### `POST /appointments/:id/votes`
 
-**Creates a vote for date *:id***
+**Creates a vote for appointment *:id***
 
 Normal response codes: `201`
 Error response codes: `4xx`
@@ -111,3 +121,42 @@ Error response codes: `4xx`
   "choices": ["2016-06-10", "2016-06-17"]
 }
 ```
+
+**Response example**
+```json
+{
+  "id":"1",
+  "name":"Lennart",
+  "choices": ["2016-06-10", "2016-06-17"]
+}
+```
+
+### `PUT /appointments/:id/votes/:id`
+
+**Updates a vote**
+
+Normal response codes: `201`
+Error response codes: `4xx`
+
+**Request example**
+```json
+{
+  "name":"Hans",
+}
+```
+
+**Response example**
+```json
+{
+  "id":"1",
+  "name":"Hans",
+  "choices": ["2016-06-10", "2016-06-17"]
+}
+```
+
+### `DELETE /appointments/:id/votes/:id`
+
+**Deletes a vote**
+
+Normal response codes: `200 204`
+Error response codes: `4xx`
