@@ -67,7 +67,7 @@ Error response codes: `4xx`
 
 ### `PUT /appointments/:id`
 
-**Updates an appointment - Only with valid key. **
+**Updates an appointment - Only with valid key.**
 
 Normal response codes: `200 204`
 Error response codes: `4xx`
@@ -124,6 +124,9 @@ Error response codes: `4xx`
 
 **Response example**
 ```json
+HEADER:
+  X-APP_KEY: k19sh63mna7pq83nbd6hdz6
+
 {
   "id":"1",
   "name":"Lennart",
@@ -140,6 +143,9 @@ Error response codes: `4xx`
 
 **Request example**
 ```json
+HEADER:
+  X-APP_KEY: k19sh63mna7pq83nbd6hdz6
+
 {
   "name":"Hans",
 }
@@ -157,6 +163,11 @@ Error response codes: `4xx`
 ### `DELETE /appointments/:id/votes/:id`
 
 **Deletes a vote**
+
+```
+HEADER:
+  X-APP_KEY: k19sh63mna7pq83nbd6hdz6
+```
 
 Normal response codes: `200 204`
 Error response codes: `4xx`
