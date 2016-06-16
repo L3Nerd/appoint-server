@@ -5,9 +5,11 @@
 Examples of this API documentation are FULL examples, means that every parameter is covered (and required!).
 
 "Key": "Value" -> is an string
+
 "Key": 123     -> is an integer
 
 The below used authentication keys are used as HTTP-HEAD Parameters.
+
 cURL example: 
 `curl -X POST --data {...} -IH "Authorization: Token token=c51f548b3db84f56a1a200e7dd3b1e0d" http://localhost:3000/appointments/1`
 
