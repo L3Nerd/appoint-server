@@ -12,26 +12,30 @@ Error response codes: `4xx`
 **Request example**
 ```json
 {
-  "name":"Grillen am Strand",
+  "title":"Grillen am Strand",
   "description":"Wollen demnächst mal am Strand grillen.",
-  "creator": "Olli",
-  "dates":["2016-06-10", "2016-06-17"]
+  "dates": [ {"date":"2016-02-03"}, {"date": "2016-06-08T14:56:29.000Z"} ]
 }
 ```
 
 **Response example**
 ```json
-HEADER:
-  X-APP_KEY: k19sh63mna7pq83nbd6hdz6
-
 {
-  "id":"1",
-  "name":"Grillen am Strand",
-  "description":"Wollen demnächst mal am Strand grillen.",
-  "creator": "Olli",
-  "created": "2016-06-08T14:56:29.000Z",
-  "updated": "2016-06-08T14:56:29.000Z",
-  "dates":["2016-06-10", "2016-06-17"]
+  "id":4,
+  "title":"nicht so toller tag Toller Tag",
+  "description":"Das wird ein soooo toller tag, nur wann?",
+  "auth_token":"c51f548b3db84f56a1a200e7dd3b1e0d",
+  "created_at":"2016-06-16T11:30:29.940Z",
+  "updated_at":"2016-06-16T11:30:29.940Z",
+  "dates": [ 
+    { "id": 1,
+      "date":"2016-02-03"
+    },
+    { "id": 2,
+      "date": "2016-06-08T14:56:29.000Z"
+    },
+  ],
+  "votes": [] 
 }
 ```
 
@@ -45,22 +49,34 @@ Error response codes: `4xx`
 **Response example**
 ```json
 {
-  "id":"1",
-  "name":"Grillen am Strand",
-  "description":"Wollen demnächst mal am Strand grillen.",
-  "creator": "Olli",
-  "created": "2016-06-08T14:56:29.000Z",
-  "updated": "2016-06-08T14:56:29.000Z",
-  "dates":["2016-06-10", "2016-06-17"],
-  "votes":[
-    {
-      "name":"Lennart",
-      "choices": ["2016-06-10", "2016-06-17"]
+  "id":4,
+  "title":"nicht so toller tag Toller Tag",
+  "description":"Das wird ein soooo toller tag, nur wann?",
+  "created_at":"2016-06-16T11:30:29.940Z",
+  "updated_at":"2016-06-16T11:30:29.940Z",
+  "dates": [ 
+    { "id": 1,
+      "date":"2016-02-03"
     },
-    {
-      "name":"Peter",
-      "choices": ["2016-06-17"]
-    }
+    { "id": 2,
+      "date": "2016-06-08T14:56:29.000Z"
+    },
+  ],
+  "votes":[
+    { "id": 1,
+      "username": "Lennart",
+      "votes": [
+        { "id": 1,
+          "date_id": 2,
+          "state":"yes",
+        },
+        { 
+          "id": 2,
+          "date_id": 1,
+          "state":"no",
+        },
+      ]
+    },
   ]
 }
 ```
@@ -74,24 +90,46 @@ Error response codes: `4xx`
 
 **Request example**
 ```json
-HEADER:
-  X-APP_KEY: k19sh63mna7pq83nbd6hdz6
+HTTP-HEADER:
+  "Authorization: Token token=c51f548b3db84f56a1a200e7dd3b1e0d"
 
 {
-  "name":"Kochen bei mir zu Hause.",
+  "title":"Grillen am Strand",
 }
 ```
 
 **Response example**
 ```json
 {
-  "id":"1",
-  "name":"Kochen bei mir zu Hause",
-  "description":"Wollen demnächst mal am Strand grillen.",
-  "creator": "Olli",
-  "created": "2016-06-08T14:56:29.000Z",
-  "updated": "2016-06-08T14:56:29.000Z",
-  "dates":["2016-06-10", "2016-06-17"]
+  "id":4,
+  "title":"Grillen am Strand",
+  "description":"Das wird ein soooo toller tag, nur wann?",
+  "created_at":"2016-06-16T11:30:29.940Z",
+  "updated_at":"2016-06-16T11:30:29.940Z",
+  "dates": [ 
+    { "id": 1,
+      "date":"2016-02-03"
+    },
+    { "id": 2,
+      "date": "2016-06-08T14:56:29.000Z"
+    },
+  ],
+  "votes":[
+    { "id": 1,
+      "username": "Lennart",
+      "votes": [
+        { "id": 1,
+          "date_id": 2,
+          "state":"yes",
+        },
+        { 
+          "id": 2,
+          "date_id": 1,
+          "state":"no",
+        },
+      ]
+    },
+  ]
 }
 ```
 
@@ -100,8 +138,8 @@ HEADER:
 **Deletes an appointment - Only with valid key.**
 
 ```
-HEADER:
-  X-APP_KEY: k19sh63mna7pq83nbd6hdz6
+HTTP-HEADER:
+  "Authorization: Token token=c51f548b3db84f56a1a200e7dd3b1e0d"
 ```
 
 Normal response codes: `200 204`
@@ -117,20 +155,18 @@ Error response codes: `4xx`
 **Request example**
 ```json
 {
-  "name":"Lennart",
-  "choices": ["2016-06-10", "2016-06-17"]
+  "username": "Lennart",
+  "choices": [2]
 }
 ```
 
 **Response example**
 ```json
-HEADER:
-  X-APP_KEY: k19sh63mna7pq83nbd6hdz6
-
 {
-  "id":"1",
-  "name":"Lennart",
-  "choices": ["2016-06-10", "2016-06-17"]
+  "id": 1,
+  "name": "Lennart",
+  "choices": [2],
+  "auth-token": "c51f548b3db84f56a1a200e7dd3b1e0d",
 }
 ```
 
@@ -144,19 +180,19 @@ Error response codes: `4xx`
 **Request example**
 ```json
 HEADER:
-  X-APP_KEY: k19sh63mna7pq83nbd6hdz6
+  X-APP_KEY: c51f548b3db84f56a1a200e7dd3b1e0d
 
 {
-  "name":"Hans",
+  "choices": [2,1],
 }
 ```
 
 **Response example**
 ```json
 {
-  "id":"1",
-  "name":"Hans",
-  "choices": ["2016-06-10", "2016-06-17"]
+  "id": 1,
+  "name": "Lennart",
+  "choices": [2, 1],
 }
 ```
 
@@ -166,7 +202,7 @@ HEADER:
 
 ```
 HEADER:
-  X-APP_KEY: k19sh63mna7pq83nbd6hdz6
+  X-APP_KEY: c51f548b3db84f56a1a200e7dd3b1e0d
 ```
 
 Normal response codes: `200 204`
