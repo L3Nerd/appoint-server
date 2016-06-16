@@ -24,8 +24,8 @@ Error response codes: `4xx`
 **Request example**
 ```json
 {
-  "title":"Grillen am Strand",
-  "description":"Wollen demnächst mal am Strand grillen.",
+  "title":"Toller Tag!",
+  "description":"Das wird ein soooo toller tag, nur wann?",
   "dates": [ {"date":"2016-02-03"}, {"date": "2016-06-08T14:56:29.000Z"} ]
 }
 ```
@@ -34,7 +34,7 @@ Error response codes: `4xx`
 ```json
 {
   "id":4,
-  "title":"nicht so toller tag Toller Tag",
+  "title":"Toller Tag!",
   "description":"Das wird ein soooo toller tag, nur wann?",
   "auth_token":"c51f548b3db84f56a1a200e7dd3b1e0d",
   "created_at":"2016-06-16T11:30:29.940Z",
@@ -62,7 +62,7 @@ Error response codes: `4xx`
 ```json
 {
   "id":4,
-  "title":"nicht so toller tag Toller Tag",
+  "title":"Toller Tag!",
   "description":"Das wird ein soooo toller tag, nur wann?",
   "created_at":"2016-06-16T11:30:29.940Z",
   "updated_at":"2016-06-16T11:30:29.940Z",
@@ -106,7 +106,8 @@ HTTP-HEADER:
   "Authorization: Token token=c51f548b3db84f56a1a200e7dd3b1e0d"
 
 {
-  "title":"Grillen am Strand",
+  "title":"Toller Tag! - Updated",
+  "description":"Haben beschlossen zu grillen!",
 }
 ```
 
@@ -114,8 +115,8 @@ HTTP-HEADER:
 ```json
 {
   "id":4,
-  "title":"Grillen am Strand",
-  "description":"Das wird ein soooo toller tag, nur wann?",
+  "title":"Toller Tag! - Updated",
+  "description":"Haben beschlossen zu grillen!",
   "created_at":"2016-06-16T11:30:29.940Z",
   "updated_at":"2016-06-16T11:30:29.940Z",
   "dates": [ 
