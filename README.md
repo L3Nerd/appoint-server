@@ -194,8 +194,8 @@ Error response codes: `4xx`
 
 **Request example**
 ```json
-HEADER:
-  X-APP_KEY: c51f548b3db84f56a1a200e7dd3b1e0d
+HTTP-HEADER:
+  "Authorization: Token token=c51f548b3db84f56a1a200e7dd3b1e0d"
 
 {
   "choices": [2,1],
@@ -218,8 +218,8 @@ HEADER:
 **Deletes a vote**
 
 ```
-HEADER:
-  X-APP_KEY: c51f548b3db84f56a1a200e7dd3b1e0d
+HTTP-HEADER:
+  "Authorization: Token token=c51f548b3db84f56a1a200e7dd3b1e0d"
 ```
 
 Normal response codes: `200 204`
