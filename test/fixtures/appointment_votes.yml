@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  state: 1
+  appointment_id: 
+  user_id: 
+
+two:
+  state: 1
+  appointment_id: 
+  user_id: 

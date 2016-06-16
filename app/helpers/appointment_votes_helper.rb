@@ -1,0 +1,2 @@
+module AppointmentVotesHelper
+end
