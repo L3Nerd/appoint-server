@@ -10,7 +10,8 @@ Examples of this API documentation are FULL examples, means that every parameter
 
 The below used authentication keys are used as HTTP-HEAD Parameters.
 
-cURL example: 
+cURL example:
+
 `curl -X POST --data {...} -IH "Authorization: Token token=c51f548b3db84f56a1a200e7dd3b1e0d" http://localhost:3000/appointments/1`
 
 ### `POST /appointments`
