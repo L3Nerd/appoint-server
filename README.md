@@ -167,6 +167,8 @@ Error response codes: `4xx`
   "name": "Lennart",
   "choices": [2],
   "auth-token": "c51f548b3db84f56a1a200e7dd3b1e0d",
+  "created_at":"2016-06-16T11:30:29.940Z",
+  "updated_at":"2016-06-16T11:30:29.940Z",
 }
 ```
 
@@ -193,6 +195,8 @@ HEADER:
   "id": 1,
   "name": "Lennart",
   "choices": [2, 1],
+  "created_at":"2016-06-16T11:30:29.940Z",
+  "updated_at":"2016-06-16T11:31:29.940Z",
 }
 ```
 
