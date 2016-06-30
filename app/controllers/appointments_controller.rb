@@ -30,11 +30,11 @@ class AppointmentsController < ApplicationController
     params[:dates].each do |appointment_time|
       date = DateTime.parse appointment_time[:date]
       appointment_time = AppointmentTime.create(time: date)
-      @appointment.appointment_times << appointment_time
+      @appointment.dates << appointment_time
     end 
 
     if @appointment.save
-      render :show, status: :created, location: @appointment
+      render :create, status: :created, location: @appointment
     else
       render json: @appointment.errors, status: :unprocessable_entity
     end

@@ -1,7 +1,7 @@
 require 'securerandom'
 class Appointment < ActiveRecord::Base
-  has_many :appointment_times
-  has_many :appointment_votes
+  has_many :dates, foreign_key: "appointment_id", class_name: "AppointmentTime", dependent: :destroy
+  has_many :appointment_votes, dependent: :destroy
   
   before_create :set_auth_token
   
