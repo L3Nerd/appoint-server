@@ -2,24 +2,9 @@ class AppointmentsController < ApplicationController
   before_action :set_appointment, only: [:show, :edit, :update, :destroy]
   before_action :authenticate, only: [:update, :destroy]
 
-  # GET /appointments
-  # GET /appointments.json
-  def index
-    @appointments = Appointment.all
-  end
-
   # GET /appointments/1
   # GET /appointments/1.json
   def show
-  end
-
-  # GET /appointments/new
-  def new
-    @appointment = Appointment.new
-  end
-
-  # GET /appointments/1/edit
-  def edit
   end
 
   # POST /appointments
