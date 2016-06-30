@@ -17,7 +17,7 @@ class AppointmentVotesController < ApplicationController
   def create
     user = User.create(username: params[:username])
     appointment = Appointment.find_by_id!(params[:appointment_id])
-    
+
     @appointment_vote = AppointmentVote.create(user: user, appointment: appointment)
 
     appointment.dates.each do |date|
@@ -27,8 +27,7 @@ class AppointmentVotesController < ApplicationController
     end
 
     if @appointment_vote.save
-      puts @appointment_vote.to_json
-      render :create, status: :created, location: appointment_appointment_vote_url(@appointment_vote)
+      render :create, status: :created
     else
       render json: @appointment_vote.errors, status: :unprocessable_entity
     end
@@ -37,14 +36,19 @@ class AppointmentVotesController < ApplicationController
   # PATCH/PUT /appointment_votes/1
   # PATCH/PUT /appointment_votes/1.json
   def update
-    respond_to do |format|
-      if @appointment_vote.update(appointment_vote_params)
-        format.html { redirect_to @appointment_vote, notice: 'Appointment vote was successfully updated.' }
-        format.json { render :show, status: :ok, location: @appointment_vote }
-      else
-        format.html { render :edit }
-        format.json { render json: @appointment_vote.errors, status: :unprocessable_entity }
-      end
+    appointment = Appointment.find_by_id!(params[:appointment_id])
+
+    appointment.dates.each do |date|
+      state = if params[:choices].include? date.id then "yes" else "no" end
+      vote = @appointment_vote.appointment_time_votes.find_by appointment_time: date
+      vote.state = state
+      vote.save
+    end
+
+    if @appointment_vote.update(appointment_vote_params)
+      render :show, status: :ok
+    else
+      render json: @appointment_vote.errors, status: :unprocessable_entity
     end
   end
 
@@ -63,9 +67,9 @@ class AppointmentVotesController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def appointment_vote_params
-      params.require(:appointment_vote).permit(:state, :appointment_id, :user_id)
+      params.permit(:state, :appointment_id, :user_id)
     end
-    
+
     def authenticate
       authenticate_or_request_with_http_token do |token, options|
         AppointmentVote.find_by(auth_token: token)
