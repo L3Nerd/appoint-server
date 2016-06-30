@@ -27,20 +27,16 @@ class AppointmentsController < ApplicationController
   def create
     @appointment = Appointment.new(appointment_params)
 
-    params[:appointment][:dates].each do |appointment_time|
+    params[:dates].each do |appointment_time|
       date = DateTime.parse appointment_time[:date]
       appointment_time = AppointmentTime.create(time: date)
       @appointment.appointment_times << appointment_time
     end 
 
-    respond_to do |format|
-      if @appointment.save
-        format.html { redirect_to @appointment, notice: 'Appointment was successfully created.' }
-        format.json { render :show, status: :created, location: @appointment }
-      else
-        format.html { render :new }
-        format.json { render json: @appointment.errors, status: :unprocessable_entity }
-      end
+    if @appointment.save
+      render :show, status: :created, location: @appointment
+    else
+      render json: @appointment.errors, status: :unprocessable_entity
     end
   end
 
@@ -76,7 +72,7 @@ class AppointmentsController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def appointment_params
-      params.require(:appointment).permit(:title, :description, :dates)
+      params.permit(:title, :description, :dates)
     end
     
 
