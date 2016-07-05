@@ -15,6 +15,7 @@ class AppointmentVotesController < ApplicationController
   # POST /appointment_votes
   # POST /appointment_votes.json
   def create
+    @choices = Array.new
     user = User.create(username: params[:username])
     appointment = Appointment.find_by_id!(params[:appointment_id])
 
@@ -24,6 +25,10 @@ class AppointmentVotesController < ApplicationController
       state = if params[:choices].include? date.id then "yes" else "no" end
       vote = AppointmentTimeVote.create(appointment_time: date, state: state)
       @appointment_vote.appointment_time_votes << vote
+      
+      if state == "yes" then
+        @choices << date.id
+      end
     end
 
     if @appointment_vote.save
@@ -36,6 +41,7 @@ class AppointmentVotesController < ApplicationController
   # PATCH/PUT /appointment_votes/1
   # PATCH/PUT /appointment_votes/1.json
   def update
+    @choices = Array.new
     appointment = Appointment.find_by_id!(params[:appointment_id])
 
     appointment.dates.each do |date|
@@ -43,6 +49,10 @@ class AppointmentVotesController < ApplicationController
       vote = @appointment_vote.appointment_time_votes.find_by appointment_time: date
       vote.state = state
       vote.save
+      
+      if state == "yes" then
+        @choices << date.id
+      end
     end
 
     if @appointment_vote.update(appointment_vote_params)
