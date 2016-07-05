@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
-  resources :appointments do
-    resources :appointment_votes, :path => "votes"
+  resources :appointments, :except => [:index, :new, :edit] do
+    resources :appointment_votes, :path => "votes", :only => [:create, :update, :destroy]
   end
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".

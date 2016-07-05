@@ -2,16 +2,6 @@ class AppointmentVotesController < ApplicationController
   before_action :set_appointment_vote, only: [:show, :edit, :update, :destroy]
   before_action :authenticate, only: [:update, :destroy]
 
-  # GET /appointment_votes
-  # GET /appointment_votes.json
-  def index
-    @appointment_votes = AppointmentVote.all
-  end
-
-  # GET /appointment_votes/1/edit
-  def edit
-  end
-
   # POST /appointment_votes
   # POST /appointment_votes.json
   def create
