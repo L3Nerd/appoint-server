@@ -1,5 +1,26 @@
 # APPOINT-Server
 
+## Requirements
+
+### Ruby
+
+ruby must be installed and configured in version >=2.0
+
+See http://rvm.io/ for easy-to-follow instructions.
+
+### Setup
+
+Run following command from the root application folder: `bin/setup`
+
+This will setup all required ruby gems and the development sqlite database. 
+
+## Start the server
+
+To start the development server, run the following command from the root application folder:
+`bin/rails server`
+
+After initializing the server is available at `http://localhost:3000/`.
+
 ## API
 
 Examples of this API documentation are FULL examples, means that every parameter is covered (and required!).
