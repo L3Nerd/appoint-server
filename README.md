@@ -12,7 +12,7 @@ See http://rvm.io/ for easy-to-follow instructions.
 
 Run following command from the root application folder: `bin/setup`
 
-This will setup all required ruby gems and the development sqlite database. 
+This will setup all required ruby gems and the development sqlite database.
 
 ## Start the server
 
@@ -60,7 +60,7 @@ Error response codes: `4xx`
   "auth_token":"c51f548b3db84f56a1a200e7dd3b1e0d",
   "created_at":"2016-06-16T11:30:29.940Z",
   "updated_at":"2016-06-16T11:30:29.940Z",
-  "dates": [ 
+  "dates": [
     { "id": 1,
       "date":"2016-02-03"
     },
@@ -68,7 +68,7 @@ Error response codes: `4xx`
       "date": "2016-06-08T14:56:29.000Z"
     },
   ],
-  "votes": [] 
+  "votes": []
 }
 ```
 
@@ -87,7 +87,7 @@ Error response codes: `4xx`
   "description":"Das wird ein soooo toller tag, nur wann?",
   "created_at":"2016-06-16T11:30:29.940Z",
   "updated_at":"2016-06-16T11:30:29.940Z",
-  "dates": [ 
+  "dates": [
     { "id": 1,
       "date":"2016-02-03"
     },
@@ -103,7 +103,7 @@ Error response codes: `4xx`
           "date_id": 2,
           "state":"yes",
         },
-        { 
+        {
           "id": 2,
           "date_id": 1,
           "state":"no",
@@ -140,7 +140,7 @@ HTTP-HEADER:
   "description":"Haben beschlossen zu grillen!",
   "created_at":"2016-06-16T11:30:29.940Z",
   "updated_at":"2016-06-16T11:30:29.940Z",
-  "dates": [ 
+  "dates": [
     { "id": 1,
       "date":"2016-02-03"
     },
@@ -156,7 +156,7 @@ HTTP-HEADER:
           "date_id": 2,
           "state":"yes",
         },
-        { 
+        {
           "id": 2,
           "date_id": 1,
           "state":"no",
@@ -245,3 +245,29 @@ HTTP-HEADER:
 
 Normal response codes: `200 204`
 Error response codes: `4xx`
+
+# Client
+
+`bin/client --help`
+
+```
+Usage:
+       client [resource] [subcommand] [ARGS]
+
+where [resource] are:
+- appointment
+- vote
+
+and [subcommand] are:
+show
+create
+update
+delete
+
+query subcommand for more help ( client vote create --help )
+
+global [ARGS] are:
+  -a, --address=<s>    Address of appoint-webservice (default: localhost)
+  -p, --port=<i>       Port of appoint-webservice (default: 3000)
+  -h, --help           Show this message
+```

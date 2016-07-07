@@ -13,20 +13,21 @@ module Client
   class Appointment
     attr_accessor :id
     attr_accessor :title
-    attr_accessor :description
-    attr_accessor :created_at
     attr_accessor :dates
-    attr_accessor :votes
     attr_accessor :token
-    
+    attr_accessor :votes
+
     def initialize(g)
       @global_opts = g
     end
-    
+
     def fetch(id)
       begin
+        @id = id
         r = RestClient.get("http://#{@global_opts[:address]}:#{@global_opts[:port]}/events/#{id}")
+        v = RestClient.get("http://#{@global_opts[:address]}:#{@global_opts[:port]}/events/#{id}/votes")
         self.parse(r)
+        self.parse(v)
         self
       rescue RestClient::NotFound
         puts "event with id \"#{id}\" not found"
@@ -36,7 +37,7 @@ module Client
 
     def create
       begin
-        r = RestClient.post("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments", self.to_json, :content_type => :json, :accept => :json)
+        r = RestClient.post("http://#{@global_opts[:address]}:#{@global_opts[:port]}/events", self.to_json, :content_type => :json, :accept => :json)
         self.parse(r)
         self
       rescue => e
@@ -44,15 +45,13 @@ module Client
         exit
       end
     end
-    
+
     def update
       begin
-        puts "\nEnter Title: [#{@title}] "
-        @title = (line = gets.chomp) == "" ? @title : line
-        puts "\nEnter Description: [#{@description}]"
-        @description = (line = gets.chomp) == "" ? @description : line
-        
-        r = RestClient.patch("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@id}", {"title"=>@title, "description"=>@description}, {:Authorization => "Token token=#{@token}"}, :content_type => :json, :accept => :json)
+        self.input
+        data = self.to_data
+        data["token"] = @token
+        r = RestClient.put("http://#{@global_opts[:address]}:#{@global_opts[:port]}/events/#{@id}", data.to_json, :content_type => :json, :accept => :json)
         self.parse(r)
         self
       rescue RestClient::Unauthorized
@@ -63,10 +62,11 @@ module Client
         exit
       end
     end
-    
+
     def delete
       begin
-        RestClient.delete("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@id}", {:Authorization => "Token token=#{@token}"})
+        RestClient::Request.execute(method: :delete, url: "http://#{@global_opts[:address]}:#{@global_opts[:port]}/events/#{@id}",
+                            payload: {"token" => @token})
       rescue RestClient::NotFound
         puts "appointment with id \"#{@id}\" not found"
         exit
@@ -75,21 +75,17 @@ module Client
         exit
       end
     end
-    
+
     def input
       puts "\nEnter Title: "
       @title = gets.chomp
-      puts "\nEnter Description: "
-      @description = gets.chomp
-      
+
       @dates = Array.new
-      
+
       puts "\nEnter multiple dates: (Hit [Enter] after date, leave empty to stop input)\n"
       while (line = gets.chomp) != ""
         begin
-          date = Hash.new
-          date["date"] = Date.parse(line).strftime("%Y-%m-%dT%l:%M:%S%z")
-          @dates << date
+          @dates << Date.parse(line).strftime("%Y-%m-%dT%H:%M:%SZ")
         rescue ArgumentError
           puts "\nValid date format is: YYYY-MM-DD or DD.MM.YYY\n"
         end
@@ -99,80 +95,71 @@ module Client
         puts "At least one date needed!"
         exit
       end
-      
+
       self
     end
-    
+
     def parse(r)
       j = JSON.parse(r)
-      @id          = j["id"]
-      @title       = j["title"]
-      @description = j["description"]
-      @created_at  = j["created_at"]
-      @dates       = j["dates"]
-      @votes       = j["votes"]
-      @token       = j["auth_token"] if j["auth_token"]
+      @id    = j["eventID"] if j["eventID"]
+      @title = j["title"] if j["title"]
+      @dates = j["dates"] if j["dates"]
+      @token = j["token"] if j["token"]
+      @votes = j["voters"] if j["voters"]
     end
-    
+
     def print
       puts ""
       puts "token:       #{@token}\n" if @token
       puts "ID:          #{@id}"
       puts "Title:       #{@title}"
-      puts "Description: #{@description}"
-      puts "Created:     #{DateTime.parse(@created_at).strftime('%c')}"
-      
+
       self.print_dates
 
-      puts "\nVotes:" if !@votes.empty?
-      @votes.each do |vote|
+      if @votes
+        puts "\nVotes:"
+        @votes.each do |vote|
+          puts ""
+          puts "  Username: #{vote["user"]}"
+          vote["votes"].each do |vote|
+            puts "    Date:   #{vote["date"]}"
+            puts "    Answer: #{vote["preference"]}"
+          end
+        end
         puts ""
-        puts "  ID:       #{vote["id"]}"
-        puts "  Username: #{vote["username"]}"
-        vote["votes"].each do |vote|
-          date = @dates.find {|x| x['id'] == vote["date_id"] }
-          puts "    ID:     #{vote["id"]}"
-          puts "    Date:   #{DateTime.parse(date["date"]).strftime('%v')}"
-          puts "    Answer: #{vote["state"]}"
+      end
+    end
+
+    def print_dates
+      if @dates
+        puts "\nDates:"
+        @dates.each do |date|
+          puts "  Date: #{DateTime.parse(date).strftime("%Y-%m-%dT%H:%M:%SZ")}"
         end
       end
-      puts ""
     end
-    
-    def print_dates
-      puts "\nDates:" if !@dates.empty?
-      @dates.each do |date|
-        puts "  ID:   #{date["id"]}"
-        puts "  Date: #{DateTime.parse(date["date"]).strftime('%c')}"
-      end
-    end
-     
-    def to_data 
+
+    def to_data
       {
-        "id"          => @id,
         "title"       => @title,
-        "description" => @description,
-        "created_at"  => @created_at,
         "dates"       => @dates,
-        "votes"       => @votes
       }
     end
-    
-    def to_json 
+
+    def to_json
       self.to_data.to_json
     end
-    
+
   end
-  
+
   ######VOTE
-  
+
   class Vote
     attr_accessor :id
     attr_accessor :username
-    attr_accessor :created_at
-    attr_accessor :choices
+    attr_accessor :votes
     attr_accessor :token
-    
+
     def initialize(g, app_id)
       @global_opts = g
       @appointment_id = app_id
@@ -181,7 +168,7 @@ module Client
 
     def create
       begin
-        r = RestClient.post("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@appointment_id}/votes", self.to_json, :content_type => :json, :accept => :json)
+        r = RestClient.post("http://#{@global_opts[:address]}:#{@global_opts[:port]}/events/#{@appointment_id}/votes", self.to_json, :content_type => :json, :accept => :json)
         self.parse(r)
         self
       rescue => e
@@ -189,11 +176,13 @@ module Client
         exit
       end
     end
-    
+
     def update
       begin
-        self.input_choices
-        r = RestClient.put("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@appointment_id}/votes/#{@id}", self.to_json, {:Authorization => "Token token=#{@token}", :content_type => :json, :accept => :json})
+        self.input
+        data = self.to_data
+        data["token"] = @token
+        r = RestClient.put("http://#{@global_opts[:address]}:#{@global_opts[:port]}/events/#{@appointment_id}/votes/#{@id}", data.to_json, :content_type => :json, :accept => :json)
         self.parse(r)
         self
       rescue RestClient::Unauthorized
@@ -204,10 +193,11 @@ module Client
         exit
       end
     end
-    
+
     def delete
       begin
-        RestClient.delete("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@appointment_id}/votes/#{@id}", {:Authorization => "Token token=#{@token}"})
+        RestClient::Request.execute(method: :delete, url: "http://#{@global_opts[:address]}:#{@global_opts[:port]}/events/#{@appointment_id}/votes/#{@id}",
+                            payload: {"token" => @token})
       rescue RestClient::NotFound
         puts "vote with id \"#{@id}\" not found"
         exit
@@ -220,75 +210,56 @@ module Client
     def input
       puts "\nEnter Username: "
       @username = gets.chomp
-      
+
       self.input_choices
-      
+
       self
     end
-    
+
     def input_choices
       @choices = Array.new
-      
-      puts "\nEnter multiple date ids (Hit [Enter] after id, leave empty to stop input)\n"
-      @appointment.print_dates
       puts ""
-      
-      while (line = gets.chomp) != ""
-        if @appointment.dates.find {|x| x['id'] == line.to_i } then
-          @choices << line.to_i
-        else
-          puts "id nicht vorhanden"
-        end
+      @appointment.dates.each do |date|
+        puts date
+        puts "preference? [yes, no, maybe]"
+        pref = gets.chomp
+        puts ""
+
+        vote = Hash.new
+        vote["date"] = date
+        vote["preference"] = pref
+        @choices << vote
       end
     end
-    
+
     def parse(r)
       j = JSON.parse(r)
-      @id         = j["id"]
-      @username   = j["name"]
-      @created_at = j["created_at"]
-      @choices    = j["choices"]
-      @token      = j["auth_token"] if j["auth_token"]
+      @id         = j["voteID"] if j["voteID"]
+      @token      = j["token"] if j["token"]
     end
-    
+
     def print
       puts ""
       puts "token:       #{@token}\n" if @token
       puts "ID:          #{@id}"
-      puts "Username:    #{@username}"
-      puts "Created:     #{DateTime.parse(@created_at).strftime('%c')}"
-      
-      @appointment = @appointment.fetch(@appointment.id)
-      vote = @appointment.votes.find {|x| x['id'] == @id }
-      
-      puts "\nChoices:" if !@choices.empty?
-      vote["votes"].each do |choice|
-        date = @appointment.dates.find {|x| x['id'] == choice["date_id"] }
-        puts ""
-        puts "  ID:     #{choice["date_id"]}"
-        puts "  Date:   #{DateTime.parse(date["date"]).strftime('%c')}"
-        puts "  Answer: #{choice["state"]}"
-      end
-
+      puts "Username:    #{@username}" if @username
       puts ""
     end
-     
-    def to_data 
+
+    def to_data
       {
-        "id"          => @id,
-        "username"    => @username,
-        "created_at"  => @created_at,
-        "choices"     => @choices,
+        "user"  => @username,
+        "votes" => @choices,
       }
     end
-    
-    def to_json 
+
+    def to_json
       self.to_data.to_json
     end
-    
+
   end
-  
-  
+
+
 end
 
 ### begin main
@@ -314,7 +285,7 @@ query subcommand for more help ( client vote create --help )
 global [ARGS] are:
 EOS
   opt :address, "Address of appoint-webservice", :short => 'a', :default => 'localhost'
-  opt :port, "Port of appoint-webservice", :short => 'p', :default => 3000
+  opt :port, "Port of appoint-webservice", :short => 'p', :default => 8080
   stop_on SUB_COMMANDS
 end
 
@@ -326,46 +297,46 @@ subsub_cmd = ARGV.shift # get the subsubcommand
 
 # evaluate appointment subcommands and options
 if sub_cmd == "appointment" then
-  cmd_opts = case subsub_cmd 
+  cmd_opts = case subsub_cmd
     when "create"
       Trollop::options do
       end
     when "show"
       Trollop::options do
-        opt :id, "appointment id", :type => :int, :required => true
+        opt :id, "appointment id", :type => :string, :required => true
       end
     when "update"
       Trollop::options do
-        opt :id, "appointment id", :type => :int, :required => true
+        opt :id, "appointment id", :type => :string, :required => true
         opt :token, "api token", :type => :string, :required => true
       end
     when "delete"
       Trollop::options do
-        opt :id, "appointment id", :type => :int, :required => true
+        opt :id, "appointment id", :type => :string, :required => true
         opt :token, "api token", :type => :string, :required => true
       end
   end
-      
+
   Trollop::die "unknown subcommand #{subsub_cmd.inspect}" if !APP_CMD.include? subsub_cmd
 end
 
 # evaluate vote subcommands and options
 if sub_cmd == "vote" then
-  cmd_opts = case subsub_cmd 
+  cmd_opts = case subsub_cmd
     when "create"
       Trollop::options do
-        opt :appointment_id, "appointment id", :type => :int, :required => true
+        opt :appointment_id, "appointment id", :type => :string, :required => true
       end
     when "update"
       Trollop::options do
-        opt :id, "vote id", :type => :int, :required => true
-        opt :appointment_id, "appointment id", :type => :int, :required => true
+        opt :id, "vote id", :type => :string, :required => true
+        opt :appointment_id, "appointment id", :type => :string, :required => true
         opt :token, "api token", :type => :string, :required => true
       end
     when "delete"
       Trollop::options do
-        opt :id, "vote id", :type => :int, :required => true
-        opt :appointment_id, "appointment id", :type => :int, :required => true
+        opt :id, "vote id", :type => :string, :required => true
+        opt :appointment_id, "appointment id", :type => :string, :required => true
         opt :token, "api token", :type => :string, :required => true
       end
   end
@@ -386,7 +357,7 @@ case subsub_cmd
         vote = Client::Vote.new(global_opts, cmd_opts[:appointment_id])
         vote.input.create.print
     end
-    
+
   when "update"
     case sub_cmd
       when "appointment"
@@ -396,12 +367,13 @@ case subsub_cmd
         vote = Client::Vote.new(global_opts, cmd_opts[:appointment_id])
         vote.id = cmd_opts[:id]
         vote.token = cmd_opts[:token]
-        vote.update.print
-    end  
+        vote.update
+    end
   when "delete"
     case sub_cmd
       when "appointment"
-        appointment.fetch(cmd_opts[:id]).token = cmd_opts[:token]
+        appointment.id = cmd_opts[:id]
+        appointment.token = cmd_opts[:token]
         appointment.delete
       when "vote"
         vote = Client::Vote.new(global_opts, cmd_opts[:appointment_id])
