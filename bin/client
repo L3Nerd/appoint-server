@@ -36,11 +36,11 @@ module Client
 
     def create
       begin
-        r = RestClient.post("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments", self.to_data)
+        r = RestClient.post("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments", self.to_json, :content_type => :json, :accept => :json)
         self.parse(r)
         self
       rescue => e
-        puts e.response.inspect
+        puts e.inspect
         exit
       end
     end
@@ -52,14 +52,14 @@ module Client
         puts "\nEnter Description: [#{@description}]"
         @description = (line = gets.chomp) == "" ? @description : line
         
-        r = RestClient.patch("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@id}", {"title"=>@title, "description"=>@description}, {:Authorization => "Token token=#{@token}"})
+        r = RestClient.patch("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@id}", {"title"=>@title, "description"=>@description}, {:Authorization => "Token token=#{@token}"}, :content_type => :json, :accept => :json)
         self.parse(r)
         self
       rescue RestClient::Unauthorized
         puts "wrong authorization token"
         exit
       rescue => e
-        puts e.response.inspect
+        puts e.inspect
         exit
       end
     end
@@ -180,25 +180,25 @@ module Client
 
     def create
       begin
-        r = RestClient.post("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@appointment_id}/votes", self.to_data)
+        r = RestClient.post("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@appointment_id}/votes", self.to_json, :content_type => :json, :accept => :json)
         self.parse(r)
         self
       rescue => e
-        puts e.response.inspect
+        puts e.inspect
         exit
       end
     end
     
     def update
       begin
-        r = RestClient.put("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@appointment_id}/votes/#{@id}", self.to_data, {:Authorization => "Token token=#{@token}"})
+        r = RestClient.put("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@appointment_id}/votes/#{@id}", self.to_json, {:Authorization => "Token token=#{@token}"}, :content_type => :json, :accept => :json)
         self.parse(r)
         self
       rescue RestClient::Unauthorized
         puts "wrong authorization token"
         exit
       rescue => e
-        puts e.response.inspect
+        puts e.inspect
         exit
       end
     end
@@ -232,7 +232,6 @@ module Client
           puts "id nicht vorhanden"
         end
       end
-      
       self
     end
     
@@ -252,13 +251,16 @@ module Client
       puts "Username:    #{@username}"
       puts "Created:     #{DateTime.parse(@created_at).strftime('%c')}"
       
+      @appointment = @appointment.fetch(@appointment.id)
+      vote = @appointment.votes.find {|x| x['id'] == @id }
+      
       puts "\nChoices:" if !@choices.empty?
-      @choices.each do |choice|
-        vote = @appointment.votes.find {|x| x['id'] == @id }
-        date = @dates.find {|x| x['id'] == vote["date_id"] }
-        puts "  ID:   #{vote["id"]}"
-        puts "  Date: #{DateTime.parse(vote["date"]).strftime('%c')}"
-        puts "  Answer: #{vote["state"]}"
+      vote["votes"].each do |choice|
+        date = @appointment.dates.find {|x| x['id'] == choice["date_id"] }
+        puts ""
+        puts "  ID:     #{choice["date_id"]}"
+        puts "  Date:   #{DateTime.parse(date["date"]).strftime('%c')}"
+        puts "  Answer: #{choice["state"]}"
       end
 
       puts ""
