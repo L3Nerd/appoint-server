@@ -126,6 +126,7 @@ module Client
 
       puts "\nVotes:" if !@votes.empty?
       @votes.each do |vote|
+        puts ""
         puts "  ID:       #{vote["id"]}"
         puts "  Username: #{vote["username"]}"
         vote["votes"].each do |vote|
@@ -191,7 +192,8 @@ module Client
     
     def update
       begin
-        r = RestClient.put("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@appointment_id}/votes/#{@id}", self.to_json, {:Authorization => "Token token=#{@token}"}, :content_type => :json, :accept => :json)
+        self.input_choices
+        r = RestClient.put("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@appointment_id}/votes/#{@id}", self.to_json, {:Authorization => "Token token=#{@token}", :content_type => :json, :accept => :json})
         self.parse(r)
         self
       rescue RestClient::Unauthorized
@@ -214,11 +216,17 @@ module Client
         exit
       end
     end
-    
+
     def input
       puts "\nEnter Username: "
       @username = gets.chomp
       
+      self.input_choices
+      
+      self
+    end
+    
+    def input_choices
       @choices = Array.new
       
       puts "\nEnter multiple date ids (Hit [Enter] after id, leave empty to stop input)\n"
@@ -232,7 +240,6 @@ module Client
           puts "id nicht vorhanden"
         end
       end
-      self
     end
     
     def parse(r)
@@ -286,7 +293,26 @@ end
 
 ### begin main
 global_opts = Trollop::options do
-  banner "appointment webservice client"
+    banner <<-EOS
+this is a program that queries the appoint rest-http API
+
+Usage:
+       client [resource] [subcommand] [ARGS]
+
+where [resource] are:
+- appointment
+- vote
+
+and [subcommand] are:
+show
+create
+update
+delete
+
+query subcommand for more help ( client vote create --help )
+
+global [ARGS] are:
+EOS
   opt :address, "Address of appoint-webservice", :short => 'a', :default => 'localhost'
   opt :port, "Port of appoint-webservice", :short => 'p', :default => 3000
   stop_on SUB_COMMANDS
@@ -301,6 +327,9 @@ subsub_cmd = ARGV.shift # get the subsubcommand
 # evaluate appointment subcommands and options
 if sub_cmd == "appointment" then
   cmd_opts = case subsub_cmd 
+    when "create"
+      Trollop::options do
+      end
     when "show"
       Trollop::options do
         opt :id, "appointment id", :type => :int, :required => true
@@ -329,10 +358,14 @@ if sub_cmd == "vote" then
       end
     when "update"
       Trollop::options do
+        opt :id, "vote id", :type => :int, :required => true
+        opt :appointment_id, "appointment id", :type => :int, :required => true
         opt :token, "api token", :type => :string, :required => true
       end
     when "delete"
       Trollop::options do
+        opt :id, "vote id", :type => :int, :required => true
+        opt :appointment_id, "appointment id", :type => :int, :required => true
         opt :token, "api token", :type => :string, :required => true
       end
   end
@@ -359,11 +392,21 @@ case subsub_cmd
       when "appointment"
         appointment.fetch(cmd_opts[:id]).token = cmd_opts[:token]
         appointment.update.print
+      when "vote"
+        vote = Client::Vote.new(global_opts, cmd_opts[:appointment_id])
+        vote.id = cmd_opts[:id]
+        vote.token = cmd_opts[:token]
+        vote.update.print
     end  
   when "delete"
     case sub_cmd
       when "appointment"
         appointment.fetch(cmd_opts[:id]).token = cmd_opts[:token]
         appointment.delete
+      when "vote"
+        vote = Client::Vote.new(global_opts, cmd_opts[:appointment_id])
+        vote.id = cmd_opts[:id]
+        vote.token = cmd_opts[:token]
+        vote.delete
     end
 end
