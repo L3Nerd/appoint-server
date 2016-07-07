@@ -1,0 +1,412 @@
+#!/usr/bin/env ruby
+
+require 'trollop'
+require 'rest-client'
+require 'json'
+require 'date'
+
+SUB_COMMANDS = %w(appointment vote)
+APP_CMD = %w(show create update delete)
+VOTE_CMD = %w(create update delete)
+
+module Client
+  class Appointment
+    attr_accessor :id
+    attr_accessor :title
+    attr_accessor :description
+    attr_accessor :created_at
+    attr_accessor :dates
+    attr_accessor :votes
+    attr_accessor :token
+    
+    def initialize(g)
+      @global_opts = g
+    end
+    
+    def fetch(id)
+      begin
+        r = RestClient.get("http://#{@global_opts[:address]}:#{@global_opts[:port]}/events/#{id}")
+        self.parse(r)
+        self
+      rescue RestClient::NotFound
+        puts "event with id \"#{id}\" not found"
+        exit
+      end
+    end
+
+    def create
+      begin
+        r = RestClient.post("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments", self.to_json, :content_type => :json, :accept => :json)
+        self.parse(r)
+        self
+      rescue => e
+        puts e.inspect
+        exit
+      end
+    end
+    
+    def update
+      begin
+        puts "\nEnter Title: [#{@title}] "
+        @title = (line = gets.chomp) == "" ? @title : line
+        puts "\nEnter Description: [#{@description}]"
+        @description = (line = gets.chomp) == "" ? @description : line
+        
+        r = RestClient.patch("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@id}", {"title"=>@title, "description"=>@description}, {:Authorization => "Token token=#{@token}"}, :content_type => :json, :accept => :json)
+        self.parse(r)
+        self
+      rescue RestClient::Unauthorized
+        puts "wrong authorization token"
+        exit
+      rescue => e
+        puts e.inspect
+        exit
+      end
+    end
+    
+    def delete
+      begin
+        RestClient.delete("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@id}", {:Authorization => "Token token=#{@token}"})
+      rescue RestClient::NotFound
+        puts "appointment with id \"#{@id}\" not found"
+        exit
+      rescue RestClient::Unauthorized
+        puts "wrong authorization token"
+        exit
+      end
+    end
+    
+    def input
+      puts "\nEnter Title: "
+      @title = gets.chomp
+      puts "\nEnter Description: "
+      @description = gets.chomp
+      
+      @dates = Array.new
+      
+      puts "\nEnter multiple dates: (Hit [Enter] after date, leave empty to stop input)\n"
+      while (line = gets.chomp) != ""
+        begin
+          date = Hash.new
+          date["date"] = Date.parse(line).strftime("%Y-%m-%dT%l:%M:%S%z")
+          @dates << date
+        rescue ArgumentError
+          puts "\nValid date format is: YYYY-MM-DD or DD.MM.YYY\n"
+        end
+      end
+
+      if @dates.empty?
+        puts "At least one date needed!"
+        exit
+      end
+      
+      self
+    end
+    
+    def parse(r)
+      j = JSON.parse(r)
+      @id          = j["id"]
+      @title       = j["title"]
+      @description = j["description"]
+      @created_at  = j["created_at"]
+      @dates       = j["dates"]
+      @votes       = j["votes"]
+      @token       = j["auth_token"] if j["auth_token"]
+    end
+    
+    def print
+      puts ""
+      puts "token:       #{@token}\n" if @token
+      puts "ID:          #{@id}"
+      puts "Title:       #{@title}"
+      puts "Description: #{@description}"
+      puts "Created:     #{DateTime.parse(@created_at).strftime('%c')}"
+      
+      self.print_dates
+
+      puts "\nVotes:" if !@votes.empty?
+      @votes.each do |vote|
+        puts ""
+        puts "  ID:       #{vote["id"]}"
+        puts "  Username: #{vote["username"]}"
+        vote["votes"].each do |vote|
+          date = @dates.find {|x| x['id'] == vote["date_id"] }
+          puts "    ID:     #{vote["id"]}"
+          puts "    Date:   #{DateTime.parse(date["date"]).strftime('%v')}"
+          puts "    Answer: #{vote["state"]}"
+        end
+      end
+      puts ""
+    end
+    
+    def print_dates
+      puts "\nDates:" if !@dates.empty?
+      @dates.each do |date|
+        puts "  ID:   #{date["id"]}"
+        puts "  Date: #{DateTime.parse(date["date"]).strftime('%c')}"
+      end
+    end
+     
+    def to_data 
+      {
+        "id"          => @id,
+        "title"       => @title,
+        "description" => @description,
+        "created_at"  => @created_at,
+        "dates"       => @dates,
+        "votes"       => @votes
+      }
+    end
+    
+    def to_json 
+      self.to_data.to_json
+    end
+    
+  end
+  
+  ######VOTE
+  
+  class Vote
+    attr_accessor :id
+    attr_accessor :username
+    attr_accessor :created_at
+    attr_accessor :choices
+    attr_accessor :token
+    
+    def initialize(g, app_id)
+      @global_opts = g
+      @appointment_id = app_id
+      @appointment = Client::Appointment.new(g).fetch(app_id)
+    end
+
+    def create
+      begin
+        r = RestClient.post("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@appointment_id}/votes", self.to_json, :content_type => :json, :accept => :json)
+        self.parse(r)
+        self
+      rescue => e
+        puts e.inspect
+        exit
+      end
+    end
+    
+    def update
+      begin
+        self.input_choices
+        r = RestClient.put("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@appointment_id}/votes/#{@id}", self.to_json, {:Authorization => "Token token=#{@token}", :content_type => :json, :accept => :json})
+        self.parse(r)
+        self
+      rescue RestClient::Unauthorized
+        puts "wrong authorization token"
+        exit
+      rescue => e
+        puts e.inspect
+        exit
+      end
+    end
+    
+    def delete
+      begin
+        RestClient.delete("http://#{@global_opts[:address]}:#{@global_opts[:port]}/appointments/#{@appointment_id}/votes/#{@id}", {:Authorization => "Token token=#{@token}"})
+      rescue RestClient::NotFound
+        puts "vote with id \"#{@id}\" not found"
+        exit
+      rescue RestClient::Unauthorized
+        puts "wrong authorization token"
+        exit
+      end
+    end
+
+    def input
+      puts "\nEnter Username: "
+      @username = gets.chomp
+      
+      self.input_choices
+      
+      self
+    end
+    
+    def input_choices
+      @choices = Array.new
+      
+      puts "\nEnter multiple date ids (Hit [Enter] after id, leave empty to stop input)\n"
+      @appointment.print_dates
+      puts ""
+      
+      while (line = gets.chomp) != ""
+        if @appointment.dates.find {|x| x['id'] == line.to_i } then
+          @choices << line.to_i
+        else
+          puts "id nicht vorhanden"
+        end
+      end
+    end
+    
+    def parse(r)
+      j = JSON.parse(r)
+      @id         = j["id"]
+      @username   = j["name"]
+      @created_at = j["created_at"]
+      @choices    = j["choices"]
+      @token      = j["auth_token"] if j["auth_token"]
+    end
+    
+    def print
+      puts ""
+      puts "token:       #{@token}\n" if @token
+      puts "ID:          #{@id}"
+      puts "Username:    #{@username}"
+      puts "Created:     #{DateTime.parse(@created_at).strftime('%c')}"
+      
+      @appointment = @appointment.fetch(@appointment.id)
+      vote = @appointment.votes.find {|x| x['id'] == @id }
+      
+      puts "\nChoices:" if !@choices.empty?
+      vote["votes"].each do |choice|
+        date = @appointment.dates.find {|x| x['id'] == choice["date_id"] }
+        puts ""
+        puts "  ID:     #{choice["date_id"]}"
+        puts "  Date:   #{DateTime.parse(date["date"]).strftime('%c')}"
+        puts "  Answer: #{choice["state"]}"
+      end
+
+      puts ""
+    end
+     
+    def to_data 
+      {
+        "id"          => @id,
+        "username"    => @username,
+        "created_at"  => @created_at,
+        "choices"     => @choices,
+      }
+    end
+    
+    def to_json 
+      self.to_data.to_json
+    end
+    
+  end
+  
+  
+end
+
+### begin main
+global_opts = Trollop::options do
+    banner <<-EOS
+this is a program that queries the appoint rest-http API
+
+Usage:
+       client [resource] [subcommand] [ARGS]
+
+where [resource] are:
+- appointment
+- vote
+
+and [subcommand] are:
+show
+create
+update
+delete
+
+query subcommand for more help ( client vote create --help )
+
+global [ARGS] are:
+EOS
+  opt :address, "Address of appoint-webservice", :short => 'a', :default => 'localhost'
+  opt :port, "Port of appoint-webservice", :short => 'p', :default => 3000
+  stop_on SUB_COMMANDS
+end
+
+sub_cmd = ARGV.shift # get the subcommand
+
+Trollop::die "unknown subcommand #{sub_cmd.inspect}" if !SUB_COMMANDS.include? sub_cmd
+
+subsub_cmd = ARGV.shift # get the subsubcommand
+
+# evaluate appointment subcommands and options
+if sub_cmd == "appointment" then
+  cmd_opts = case subsub_cmd 
+    when "create"
+      Trollop::options do
+      end
+    when "show"
+      Trollop::options do
+        opt :id, "appointment id", :type => :int, :required => true
+      end
+    when "update"
+      Trollop::options do
+        opt :id, "appointment id", :type => :int, :required => true
+        opt :token, "api token", :type => :string, :required => true
+      end
+    when "delete"
+      Trollop::options do
+        opt :id, "appointment id", :type => :int, :required => true
+        opt :token, "api token", :type => :string, :required => true
+      end
+  end
+      
+  Trollop::die "unknown subcommand #{subsub_cmd.inspect}" if !APP_CMD.include? subsub_cmd
+end
+
+# evaluate vote subcommands and options
+if sub_cmd == "vote" then
+  cmd_opts = case subsub_cmd 
+    when "create"
+      Trollop::options do
+        opt :appointment_id, "appointment id", :type => :int, :required => true
+      end
+    when "update"
+      Trollop::options do
+        opt :id, "vote id", :type => :int, :required => true
+        opt :appointment_id, "appointment id", :type => :int, :required => true
+        opt :token, "api token", :type => :string, :required => true
+      end
+    when "delete"
+      Trollop::options do
+        opt :id, "vote id", :type => :int, :required => true
+        opt :appointment_id, "appointment id", :type => :int, :required => true
+        opt :token, "api token", :type => :string, :required => true
+      end
+  end
+
+  Trollop::die "unknown subcommand #{subsub_cmd.inspect}" if !VOTE_CMD.include? subsub_cmd
+end
+
+appointment = Client::Appointment.new(global_opts)
+
+case subsub_cmd
+  when "show"
+    appointment.fetch(cmd_opts[:id]).print
+  when "create"
+    case sub_cmd
+      when "appointment"
+        appointment.input.create.print
+      when "vote"
+        vote = Client::Vote.new(global_opts, cmd_opts[:appointment_id])
+        vote.input.create.print
+    end
+    
+  when "update"
+    case sub_cmd
+      when "appointment"
+        appointment.fetch(cmd_opts[:id]).token = cmd_opts[:token]
+        appointment.update.print
+      when "vote"
+        vote = Client::Vote.new(global_opts, cmd_opts[:appointment_id])
+        vote.id = cmd_opts[:id]
+        vote.token = cmd_opts[:token]
+        vote.update.print
+    end  
+  when "delete"
+    case sub_cmd
+      when "appointment"
+        appointment.fetch(cmd_opts[:id]).token = cmd_opts[:token]
+        appointment.delete
+      when "vote"
+        vote = Client::Vote.new(global_opts, cmd_opts[:appointment_id])
+        vote.id = cmd_opts[:id]
+        vote.token = cmd_opts[:token]
+        vote.delete
+    end
+end
