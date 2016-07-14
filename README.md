@@ -250,7 +250,9 @@ Error response codes: `4xx`
 
 # Client
 
-`bin/client --help`
+Vom root-Application-Verzeichnis: `bin/client`
+
+Ausgabe von `bin/client --help`:
 
 ```
 Usage:
