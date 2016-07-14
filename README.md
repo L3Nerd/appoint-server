@@ -6,11 +6,13 @@
 
 ruby must be installed and configured in version >=2.0
 
-See http://rvm.io/ for easy-to-follow instructions.
+Visit http://rvm.io/ for easy-to-follow instructions.
 
 ### Setup
 
-Run following command from the root application folder: `bin/setup`
+- Bundler gem is required: `gem install bundler`
+
+- Run following command from the root application folder: `bin/setup`
 
 This will setup all required ruby gems and the development sqlite database.
 
